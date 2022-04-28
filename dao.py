@@ -79,10 +79,3 @@ class OutcomesDAO:
             }
 
         return outcome_found
-
-if __name__ == "__main__":
-    from config import DB_PATH
-    db = OutcomesDAO(DB_PATH)
-    result = db.get_outcome_by_id('text')
-    # result = db.count_records()
-    print(result)
