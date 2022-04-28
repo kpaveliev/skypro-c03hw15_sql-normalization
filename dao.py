@@ -6,17 +6,51 @@ class OutcomesDAO:
         """Path to the database needs to be submitted when creating dao object"""
         self.path = path
 
-    def get_outcome_by_id(self, id: int) -> dict:
+
+    def query_database(self, sql_query: str, *args) -> list:
+        """Create connection and pass query
+
+        :param sql_query: SQL query which needs to be made
+        :param *args: Arguments to be added to the query
+        :return: List with the query results
+        """
+        with sqlite3.connect(self.path) as connection:
+            cursor = connection.cursor()
+            cursor.execute(sql_query, args)
+            query_result = cursor.fetchall()
+        return query_result
+
+    def count_records(self) -> int:
+        """Get total number of rows in the database"""
+        # Query the database
+        sql_query = """
+                SELECT COUNT()
+                FROM outcomes
+        """
+        query_result = self.query_database(sql_query)
+        records_number = query_result[0][0]
+        return records_number
+
+    def get_outcome_by_id(self, id: str) -> dict:
         """Get outcome details by id
 
-        :param id: Outcome id
-        # :return: Dictionary with title, country, release year, genre, description
-        # :raise ValueError: If title not found
+        :param id: Outcome id to look for
+        :return: Dictionary with the selected fields for the outcome found
+        :raise TypeError: If value passed is not number
+        :raise ValueError: If value passed is outside range of possible numbers
         """
-        # Query results from the database
-        with sqlite3.connect(self.path) as connection:
+        # Get total number of records in the database and check if id meet conditions
+        records_number = self.count_records()
 
-            cursor = connection.cursor()
+        if not id.isdigit():
+            raise TypeError(f'ID passed ({id}) is not positive integer, '
+                            f'only positive integers in range 0-{records_number} accepted')
+        elif not 0 <= int(id) <= records_number:
+            raise ValueError(f'ID passed ({id}) is not found in the database, '
+                             f'value should be in range 0-{records_number}')
+
+        # Query the database if value is okay
+        else:
             sql_query = """
                     SELECT outcomes.id, outcomes.year,
                            types.type, subtypes.subtype,
@@ -30,26 +64,25 @@ class OutcomesDAO:
                         LEFT JOIN animal_colors main_colors ON animals.main_color_id = main_colors.id
                     WHERE outcomes.id = :id             
             """
-            cursor.execute(sql_query, {'id': id})
-            query_result = cursor.fetchone()
-        # Make a dictionary with the query results
-        if query_result is not None:
+            query_result = self.query_database(sql_query, id)
+
+            # Make a dictionary with the query results
             outcome_found = {
-                'id': query_result[0],
-                'year': query_result[1],
-                'type': query_result[2],
-                'subtype': query_result[3],
-                'animal_name': query_result[4],
-                'animal_specie': query_result[5],
-                'animal_breed': query_result[6],
-                'animal_main_color': query_result[7]
+                'id': query_result[0][0],
+                'year': query_result[0][1],
+                'type': query_result[0][2],
+                'subtype': query_result[0][3],
+                'animal_name': query_result[0][4],
+                'animal_specie': query_result[0][5],
+                'animal_breed': query_result[0][6],
+                'animal_main_color': query_result[0][7]
             }
-        else:
-            raise ValueError(f'{id} not found in the database')
+
         return outcome_found
 
 if __name__ == "__main__":
     from config import DB_PATH
     db = OutcomesDAO(DB_PATH)
-    result = db.get_outcome_by_id(1)
+    result = db.get_outcome_by_id('text')
+    # result = db.count_records()
     print(result)
