@@ -6,7 +6,7 @@
 **Key elements**
 1. app.py - flask application
 2. dao.py - methods to work with the database
-3. /sql - sql command to normalize database
+3. /sql - sql commands to normalize database
 4. /data/animal.db - database with old and new normalized tables
 
 **Other**
